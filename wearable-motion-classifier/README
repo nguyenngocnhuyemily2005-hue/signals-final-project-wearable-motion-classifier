@@ -10,9 +10,3 @@ Real-time wearable human activity recognition system using ESP32-S3 and IMU sens
 ## Pipeline
 IMU → Filtering → Windowing → Feature Extraction → Classification
 
-## Current Status
-- [x] PlatformIO setup
-- [x] ESP32 firmware upload
-- [ ] IMU integration
-- [ ] Signal processing
-- [ ] Motion classification
