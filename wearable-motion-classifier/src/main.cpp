@@ -1,9 +1,11 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_MPU6050.h>
-#include <Adafruit_Sensor.h>
+#include <DFRobot_BMI160.h>
 
-Adafruit_MPU6050 mpu;
+DFRobot_BMI160 bmi160;
+int8_t rslt = BMI160_OK;
+
+int16_t accelGyro[6] = {0};
 
 void setup() {
     Serial.begin(115200);
@@ -11,38 +13,37 @@ void setup() {
 
     Wire.begin(8, 9);
 
-    if (!mpu.begin()) {
-        Serial.println("MPU6050 not found!");
-        while (1) {
-            delay(10);
-        }
+    rslt = bmi160.I2cInit();
+
+    if (rslt != BMI160_OK) {
+        Serial.println("BMI160 initialization failed!");
+        while (1);
     }
 
-    Serial.println("MPU6050 connected!");
+    Serial.println("BMI160 connected!");
 }
 
 void loop() {
-    sensors_event_t a, g, temp;
 
-    mpu.getEvent(&a, &g, &temp);
+    bmi160.getAccelGyroData(accelGyro);
 
     Serial.print("AX: ");
-    Serial.print(a.acceleration.x);
+    Serial.print(accelGyro[0]);
 
     Serial.print(" AY: ");
-    Serial.print(a.acceleration.y);
+    Serial.print(accelGyro[1]);
 
     Serial.print(" AZ: ");
-    Serial.print(a.acceleration.z);
+    Serial.print(accelGyro[2]);
 
     Serial.print(" GX: ");
-    Serial.print(g.gyro.x);
+    Serial.print(accelGyro[3]);
 
     Serial.print(" GY: ");
-    Serial.print(g.gyro.y);
+    Serial.print(accelGyro[4]);
 
     Serial.print(" GZ: ");
-    Serial.println(g.gyro.z);
+    Serial.println(accelGyro[5]);
 
     delay(200);
 }
