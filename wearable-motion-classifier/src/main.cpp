@@ -1,60 +1,68 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <DFRobot_BMI160.h>
 
-DFRobot_BMI160 bmi160;
-int8_t rslt = BMI160_OK;
+#define BMI160_ADDR 0x69
 
-int16_t accelGyro[6] = {0};
+void writeRegister(uint8_t reg, uint8_t value) {
+
+    Wire.beginTransmission(BMI160_ADDR);
+
+    Wire.write(reg);
+
+    Wire.write(value);
+
+    Wire.endTransmission();
+}
+
+int16_t read16(uint8_t reg) {
+
+    Wire.beginTransmission(BMI160_ADDR);
+
+    Wire.write(reg);
+
+    Wire.endTransmission(false);
+
+    Wire.requestFrom(BMI160_ADDR, 2);
+
+    uint8_t lsb = Wire.read();
+
+    uint8_t msb = Wire.read();
+
+    return (int16_t)((msb << 8) | lsb);
+}
 
 void setup() {
 
     Serial.begin(115200);
 
-    delay(2000);
+    delay(3000);
 
-    Wire.begin(8, 9);
+    Wire.begin(10, 11);
 
-    rslt = bmi160.I2cInit();
+    Serial.println("BMI160 START");
 
-    if (rslt != BMI160_OK) {
+    // accel normal mode
+    writeRegister(0x7E, 0x11);
 
-        Serial.println("BMI160 initialization failed!");
-
-        while (1);
-    }
-
-    Serial.println("BMI160 connected!");
+    delay(100);
 }
 
 void loop() {
 
-    // Read BMI160 data
-    bmi160.getAccelGyroData(accelGyro);
+    int16_t forwardBackward = read16(0x12);
 
-    // Timestamp
-    unsigned long timestamp = millis();
+    int16_t leftRight = read16(0x14);
 
-    // CSV format
-    Serial.print(timestamp);
-    Serial.print(",");
+    int16_t upDown = read16(0x16);
 
-    Serial.print(accelGyro[0]);
-    Serial.print(",");
+    Serial.print("FB = ");
+    Serial.print(forwardBackward);
 
-    Serial.print(accelGyro[1]);
-    Serial.print(",");
+    Serial.print(" | LR = ");
+    Serial.print(leftRight);
 
-    Serial.print(accelGyro[2]);
-    Serial.print(",");
+    Serial.print(" | UD = ");
+    Serial.println(upDown);
 
-    Serial.print(accelGyro[3]);
-    Serial.print(",");
-
-    Serial.print(accelGyro[4]);
-    Serial.print(",");
-
-    Serial.println(accelGyro[5]);
-
-    delay(10);
+    delay(200);
 }
