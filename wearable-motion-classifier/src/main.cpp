@@ -1,7 +1,13 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <WiFi.h>
 
 #define BMI160_ADDR 0x69
+
+const char* ssid = "EmilYy";
+const char* password = "innerln.y";
+
+WiFiServer server(80);
 
 void writeRegister(uint8_t reg, uint8_t value) {
 
@@ -24,6 +30,11 @@ int16_t read16(uint8_t reg) {
 
     Wire.requestFrom(BMI160_ADDR, 2);
 
+    if (Wire.available() < 2) {
+
+        return 0;
+    }
+
     uint8_t lsb = Wire.read();
 
     uint8_t msb = Wire.read();
@@ -37,6 +48,8 @@ void setup() {
 
     delay(3000);
 
+    Serial.println("BOOT");
+
     Wire.begin(10, 11);
 
     Serial.println("BMI160 START");
@@ -45,9 +58,39 @@ void setup() {
     writeRegister(0x7E, 0x11);
 
     delay(100);
+
+    Serial.println("CONNECTING WIFI");
+
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+
+        delay(500);
+
+        Serial.print(".");
+    }
+
+    Serial.println();
+
+    Serial.println("WIFI CONNECTED");
+
+    Serial.print("ESP IP: ");
+
+    Serial.println(WiFi.localIP());
+
+    server.begin();
+
+    Serial.println("TCP SERVER STARTED");
 }
 
 void loop() {
+
+    static WiFiClient client;
+
+    if (!client || !client.connected()) {
+
+        client = server.available();
+    }
 
     int16_t forwardBackward = read16(0x12);
 
@@ -55,14 +98,17 @@ void loop() {
 
     int16_t upDown = read16(0x16);
 
-    Serial.print("FB = ");
-    Serial.print(forwardBackward);
+    String data =
+        String(forwardBackward) + "," +
+        String(leftRight) + "," +
+        String(upDown);
 
-    Serial.print(" | LR = ");
-    Serial.print(leftRight);
+    Serial.println(data);
 
-    Serial.print(" | UD = ");
-    Serial.println(upDown);
+    if (client && client.connected()) {
+
+        client.println(data);
+    }
 
     delay(200);
 }
